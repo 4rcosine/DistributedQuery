@@ -1,3 +1,5 @@
+
+
 class query_plan(object):
     """Classe che rappresenta l'albero della query"""
 
@@ -16,6 +18,7 @@ class query_plan(object):
     def calcola_profili(self, nodo):
         #Determino i figlio del nodo corrente
         figli = []
+        
         for nodo_tmp in self.lista_nodi:
             if nodo_tmp.id_padre == nodo.id:
                 figli.append()
@@ -23,11 +26,23 @@ class query_plan(object):
         #Lancio il calcola_profili ricorsivamente su tutti i figli
         for figlio in figli:
             calcola_profili(figlio)
+            
+            #Per tutti i figli, faccio l'union degli insiemi (escluso che per le join e prodotti cartesiani, il figlio sarà uno solo sempre)
+            for i in range(0, 5):
+                nodo.profilo[i].union(figlio.profilo[i])
 
         #Determino il profilo del nodo corrente
+        if nodo.tipo_op == "proj":
+            nodo.profilo["vp"] = nodo.profilo["vp"].intersection(nodo.set_attributi)
+            nodo.profilo["ve"] = nodo.profilo["ve"].intersection(nodo.set_attributi)
 
+        elif nodo.tipo_op == "sel_val":
+            self.profilo["ip"] = nodo.profilo["ip"].union(nodo.profilo["vp"]).intersection(nodo.set_attributi)
+            self.profilo["ie"] = nodo.profilo["ie"].union(nodo.profilo["ve"]).intersection(nodo.set_attributi)
 
-        
+        elif nodo.tipo_op == "sel_attr":
+            self.profilo["eq"] = nodo.profilo["eq"].union()
+
 
 
 class nodo_plan:
@@ -42,3 +57,8 @@ class nodo_plan:
         self.tipo_op = tipo_op
         self.set_attr = set_attributi
         self.id_padre = id_padre
+        self.profilo["vp"] = set()
+        self.profilo["ve"] = set()
+        self.profilo["ip"] = set()
+        self.profilo["ie"] = set()
+        self.profilo["eq"] = set()

@@ -33,15 +33,33 @@ class query_plan(object):
 
         #Determino il profilo del nodo corrente
         if nodo.tipo_op == "proj":
-            nodo.profilo["vp"] = nodo.profilo["vp"].intersection(nodo.set_attributi)
-            nodo.profilo["ve"] = nodo.profilo["ve"].intersection(nodo.set_attributi)
+            nodo.profilo["vp"] = nodo.profilo["vp"].intersection(nodo.set_attr)
+            nodo.profilo["ve"] = nodo.profilo["ve"].intersection(nodo.set_attr)
 
         elif nodo.tipo_op == "sel_val":
-            self.profilo["ip"] = nodo.profilo["ip"].union(nodo.profilo["vp"]).intersection(nodo.set_attributi)
-            self.profilo["ie"] = nodo.profilo["ie"].union(nodo.profilo["ve"]).intersection(nodo.set_attributi)
+            self.profilo["ip"] = nodo.profilo["ip"].union(nodo.profilo["vp"]).intersection(nodo.set_attr)
+            self.profilo["ie"] = nodo.profilo["ie"].union(nodo.profilo["ve"]).intersection(nodo.set_attr)
 
         elif nodo.tipo_op == "sel_attr":
-            self.profilo["eq"] = nodo.profilo["eq"].union()
+            self.profilo["eq"] = nodo.profilo["eq"].union(nodo.set_attr)       #Qua viene aggiunto un set dentro al set → rappresentare il set di attributi come frozenset o come tupla
+
+        elif nodo.tipo_op == "cart":
+            #Non faccio nulla perché prendo l'union fatte precedenti
+
+        elif nodo.tipo_op == "join":
+            self.profilo["eq"] = nodo.profilo["eq"].union(nodo.set_attr)       #Discorso analogo per sel_attr
+
+        elif nodo.tipo_op == "gby":
+            nodo.profilo["vp"] = nodo.profilo["vp"].intersection(nodo.set_attr.union(nodo.set_oper))
+            nodo.profilo["ve"] = nodo.profilo["ve"].intersection(nodo.set_attr.union(nodo.set_oper))
+            self.profilo["ip"] = nodo.profilo["ip"].union(nodo.profilo["vp"].intersection(nodo.set_attr))
+            self.profilo["ie"] = nodo.profilo["ie"].union(nodo.profilo["ve"].intersection(nodo.set_attr))
+
+        elif 
+
+
+
+
 
 
 
@@ -52,10 +70,11 @@ class nodo_plan:
     #set_attributi = attributi coinvolti dall'operazione
     #id_padre = identificativo del nodo padre
 
-    def __init__(self, id, tipo_op, set_attributi, id_padre):
+    def __init__(self, id, tipo_op, set_attributi, set_operandi, id_padre):
         self.id = id
         self.tipo_op = tipo_op
         self.set_attr = set_attributi
+        self.set_oper = set_operandi
         self.id_padre = id_padre
         self.profilo["vp"] = set()
         self.profilo["ve"] = set()

@@ -43,9 +43,6 @@ class query_plan(object):
         elif nodo.tipo_op == "sel_attr":
             self.profilo["eq"] = nodo.profilo["eq"].union(nodo.set_attr)       #Qua viene aggiunto un set dentro al set → rappresentare il set di attributi come frozenset o come tupla
 
-        elif nodo.tipo_op == "cart":
-            #Non faccio nulla perché prendo l'union fatte precedenti
-
         elif nodo.tipo_op == "join":
             self.profilo["eq"] = nodo.profilo["eq"].union(nodo.set_attr)       #Discorso analogo per sel_attr
 
@@ -55,13 +52,7 @@ class query_plan(object):
             self.profilo["ip"] = nodo.profilo["ip"].union(nodo.profilo["vp"].intersection(nodo.set_attr))
             self.profilo["ie"] = nodo.profilo["ie"].union(nodo.profilo["ve"].intersection(nodo.set_attr))
 
-        elif 
-
-
-
-
-
-
+        elif nodo.tipo_op == "":
 
 class nodo_plan:
     """Classe che rappresenta il nodo dell'albero della query"""

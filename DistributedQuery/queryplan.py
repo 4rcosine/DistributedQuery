@@ -113,8 +113,6 @@ class query_plan(object):
 		if curr_n.id_padre == 0:
 			self.sistema_set(fix_eq=True)
 
-
-
 	def sistema_set(self, fix_eq):
 
 		for id, nodo in self.lista_nodi.items():
@@ -154,6 +152,24 @@ class query_plan(object):
 					if sel not in self.lista_nodi[id].profilo["eq"]:
 						self.lista_nodi[id].profilo["eq"].append(sel)
 
+	def calcola_candidati(self, auths):
+		for key, node in self.lista_nodi.items():
+			if node.tipo_op != 'base':
+				for subj, auth in auths.items():
+					#Controllo autorizzazione per il plain text
+					aut_plain = (node.profilo["vp"].union(node.profilo["ip"])).issubset(auth["p"])
+				
+					#Controllo autorizzazione per il cifrato
+					aut_encr = (node.profilo["ve"].union(node.profilo["ie"])).issubset(auth["p"].union(auth["e"]))
+
+					aut_eq = True
+					#Controllo autorizzazione per insiemi di equivalenza
+					for subset in node.profilo["eq"]:
+						aut_eq = aut_eq and (subset.issubset(auth["p"]) or subset.issubset(auth["e"]))
+
+					if aut_plain and aut_encr and aut_eq:
+						self.lista_nodi[key].candidati.add(subj)
+
 class nodo_plan:
 	"""Classe che rappresenta il nodo dell'albero della query"""
 	#id = identificativo del nodo, serve per identificare il padre
@@ -176,6 +192,7 @@ class nodo_plan:
 		self.profilo["ie"] = set()
 		self.profilo["eq"] = []
 		self.profilo["rn"] = {}
+		self.candidati = set()
 
 	def get_profilo(self):
-		return (self.profilo["vp"], self.profilo["ve"], self.profilo["ip"], self.profilo["ie"], self.profilo["eq"])
+		return (self.profilo["vp"], self.profilo["ve"], self.profilo["ip"], self.profilo["ie"], self.profilo["eq"], self.candidati)

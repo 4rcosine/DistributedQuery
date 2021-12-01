@@ -1,23 +1,90 @@
 
+class nodo_plan:
+	"""Classe che rappresenta il nodo dell'albero della query"""
+	#id = identificativo del nodo, serve per identificare il padre
+	#tipo_op = operazione eseguita
+	#set_attr = attributi coinvolti dall'operazione
+	#set_oper = operandi coinvolti nell'operazione (per group by)
+	#id_padre = identificativo del nodo padre
+	#ordine = posizione del nodo (per quando ci sono più nodi su un solo livello, come nelle set operation)
+
+	def __init__(self, tipo_op, set_attributi, set_operandi, set_attrplain, id_padre, ordine):
+		self.tipo_op = tipo_op
+		self.set_attr = set_attributi
+		self.set_oper = set_operandi
+		self.id_padre = id_padre
+		self.set_attrplain = set_attrplain
+		self.ordine = ordine
+		self.profilo = {}
+		self.profilo["vp"] = set()
+		self.profilo["ve"] = set()
+		self.profilo["ip"] = set()
+		self.profilo["ie"] = set()
+		self.profilo["eq"] = []
+		self.profilo["rn"] = {}
+		self.candidati = set()
+		self.assegnatario = ""
+
+	def get_profilo(self):
+		return (self.profilo["vp"], self.profilo["ve"], self.profilo["ip"], self.profilo["ie"], self.profilo["eq"], self.candidati, self.assegnatario)
+
 
 class query_plan(object):
 	"""Classe che rappresenta l'albero della query"""
 
 	def __init__(self):
-		self.lista_nodi = {}
+		self.lista_nodi = dict()
+		self.soggetti = dict()
+		self.op_cif_dec = list() #Operazioni di cifratura/decifratura iniettate nel secondo step
 
 	def add_nodo(self, id, nodo):
 		self.lista_nodi[id] = nodo
 
-	def add_nodo(self, id, tipo_op, set_attributi, set_operandi, id_padre, ordine):
-		nodo = nodo_plan(tipo_op=tipo_op, set_attributi=set_attributi, set_operandi=set_operandi, id_padre=id_padre, ordine=ordine)
+	def add_nodo(self, id, tipo_op, set_attributi, set_operandi, set_attrplain, id_padre, ordine):
+		nodo = nodo_plan(tipo_op=tipo_op, set_attributi=set_attributi, set_operandi=set_operandi, set_attrplain=set_attrplain, id_padre=id_padre, ordine=ordine)
 		self.lista_nodi[id] = nodo
 
 	def get_nodo(self, id):
 		return self.lista_nodi[id]
 
+	def set_subj(self, soggetti):
+		self.soggetti = soggetti
+
+	def get_ocd(self):
+		return self.op_cif_dec
+
+
+	def pulisci_profili(self):
+		#Candidati calcolati: sbianco tutto
+		for id, nodo in self.lista_nodi.items():
+			self.lista_nodi[id].profilo["vp"] = set()
+			self.lista_nodi[id].profilo["ve"] = set()
+			self.lista_nodi[id].profilo["ip"] = set()
+			self.lista_nodi[id].profilo["ie"] = set()
+			self.lista_nodi[id].profilo["eq"] = []
+			self.lista_nodi[id].profilo["rn"] = {}
+
+	#Funzione di ottenimento dei set degli attributi che devono essere cifrati con la stessa chiave
+	def get_asc(self):
+		ins_eq = self.lista_nodi[1].profilo["eq"]
+		
+		lista_set_adc = list()
+		#Calcolo l'insieme degli attributi che da qualche parte deve essere cifrata
+		set_adc = set()
+		for ocd in self.op_cif_dec:
+			if ocd["tipo_op"] == "C":
+				set_adc.update(ocd["adc"])
+			
+		for subset in ins_eq:
+			if subset.issubset(set_adc):
+				lista_set_adc.append(subset)
+
+		return lista_set_adc
+
+
+
 	#I profili sono calcolati secondo una visita post-order
-	def calcola_profilo(self, id):
+	def esegui_step_rec(self, id, first_step):
 
 		#Uso una variabile temporanea per migliorare la leggibilità
 		curr_n = self.lista_nodi[id]
@@ -30,9 +97,9 @@ class query_plan(object):
 				figli.append(indice)
 
 		if len(figli) > 0:
-			#Lancio il calcola_profilo iterativamente su tutti i figli
+			#Lancio il esegui_step_rec ricorsivamente su tutti i figli
 			for figlio in figli:
-				self.calcola_profilo(figlio)
+				self.esegui_step_rec(figlio, first_step)
 			
 				#Per tutti i figli, faccio l'union degli insiemi (escluso che per le join e prodotti cartesiani, il figlio sarà uno solo sempre)
 				for i in {'vp', 've', 'ip', 'ie'}:
@@ -43,10 +110,74 @@ class query_plan(object):
 						self.lista_nodi[id].profilo["eq"].append(subset)
 
 				self.lista_nodi[id].profilo["rn"].update(self.lista_nodi[figlio].profilo["rn"])
+		
+		#Valutazione degli attributi che bisogna avere per forza decifrati per il nodo
+		attr_da_decifrare = curr_n.profilo["ve"].intersection(curr_n.set_attrplain)
+		if len(attr_da_decifrare) > 0:
+			self.lista_nodi[id].profilo["ve"] = curr_n.profilo["ve"].difference(attr_da_decifrare)
+			self.lista_nodi[id].profilo["vp"] = curr_n.profilo["vp"].union(attr_da_decifrare)
+
+			if not first_step:
+				self.op_cif_dec.append({ "padre" : id , "figlio" : figli[0], "tipo_op" : "D", "adc" : attr_da_decifrare, "exec" : self.lista_nodi[id].assegnatario})	
+
+		#Calcolo l'effettivo candidato che eseguirà l'operazione
+		if not first_step:
+			self.sistema_set(id, True)
+			
+			if curr_n.tipo_op == 'proj' and self.lista_nodi[figli[0]].tipo_op == "base":
+				#Caso particolare di proiezione eseguita subito dopo una tabella base: eredito come candidato l'owner della tabella
+				self.lista_nodi[id].assegnatario = self.lista_nodi[figli[0]].assegnatario
+
+			elif curr_n.tipo_op == "base":
+				#Caso particolare di tablela base: prendo come candidato l'owner (creo questo caso per saltare i controlli sugli attributi da cifrare)
+				self.lista_nodi[id].assegnatario = list(self.lista_nodi[id].candidati)[0]
+
+			else:
+				#Caso normale: calcolo del candidato corretto
+				candidato = ""
+				sogg_ord = (sorted(self.soggetti, key=lambda x: (self.soggetti[x]["pri"])))
+				for sogg in sogg_ord:
+					if sogg in self.lista_nodi[id].candidati:
+						candidato = sogg
+						break
+
+
+				self.lista_nodi[id].assegnatario = candidato #Prendo come il primo in ordine alfabetio -> L'ordine alfabetico fa la priorità
+				auth_cand = self.soggetti[candidato] #Ne prendo le autorizzazioni
+
+				attr_da_cifrare = set()
+
+				#cifrature per sistemare le auth su attributi in chiaro
+				attr_da_cifrare.update((curr_n.profilo["vp"].union(curr_n.profilo["ip"])).difference(auth_cand["p"]))
+
+				#cifrature per sistemare le auth su attributi in insiemi di equivalenza
+				for subset in curr_n.profilo["eq"]:
+					if not subset.issubset(auth_cand["p"]) and not subset.issubset(auth_cand["e"]):
+						#Se la visibilità non è uniforme, cifro gli attributi attualmente in chiaro (e che non sono già da cifrare)
+						attr_da_cifrare.update((subset.difference(auth_cand["e"])).difference(attr_da_cifrare))
+
+				#Effettuo la cifratura vera e propria
+				self.lista_nodi[id].profilo["vp"] = curr_n.profilo["vp"].difference(attr_da_cifrare)
+				self.lista_nodi[id].profilo["ve"] = curr_n.profilo["ve"].union(attr_da_cifrare)
+
+				#Mi segno l'operazione di cifratura che ho iniettato, ricercando il figlio al quale affidarla
+				for figlio in figli:
+					#Prendo gli attributi da cifrare per il figlio come intersezione tra l'insieme degli attributi da cifrare e gli attributi nel Rvp del figlio
+					adc_figlio = self.lista_nodi[figlio].profilo["vp"].intersection(attr_da_cifrare)
+					if len(adc_figlio):
+						self.op_cif_dec.append({ "padre" : id , "figlio" : figlio, "tipo_op" : "C",  "adc" : adc_figlio, "exec" : self.lista_nodi[figlio].assegnatario})
+
+		
 
 		#Determino il profilo del nodo corrente
 		if curr_n.tipo_op == "base":
-			self.lista_nodi[id].profilo["vp"] = curr_n.set_attr
+			if first_step:
+				#Mandata di calcolo set candidati: eseguo l'injection della cifratura, per calcolare i candidati possibili
+				self.lista_nodi[id].profilo["ve"] = curr_n.set_attr
+
+			else:
+				#Mandata di determinazione dell'assegnatario: calcolo il vero profilo
+				self.lista_nodi[id].profilo["vp"] = curr_n.set_attr
 
 		elif curr_n.tipo_op == "proj":
 			self.lista_nodi[id].profilo["vp"] = curr_n.profilo["vp"].intersection(curr_n.set_attr)
@@ -76,11 +207,10 @@ class query_plan(object):
 			self.lista_nodi[id].profilo["rn"][list(curr_n.set_oper)[0]] = list(curr_n.set_attr)[0]
 			self.lista_nodi[id].profilo["ve"] = curr_n.profilo["ve"].difference(curr_n.set_attr).union(curr_n.set_oper)
 
-
 		#elif self.lista_nodi[id].tipo_op == "set":
 		#    for figlio in figli:
 		#        #Calcolo i profili dei figli
-		#        calcola_profilo(figlio)
+		#        esegui_step_rec(figlio)
 
 		#        #Figlio più a sinistra → lo uso per gli attributi visibili in plain e cifrati
 		#        if self.lista_nodi[figlio].ordine == 0:
@@ -109,24 +239,48 @@ class query_plan(object):
 			self.lista_nodi[id].profilo["ve"] = curr_n.profilo["ve"].difference(curr_n.set_attr)
 			self.lista_nodi[id].profilo["vp"] = curr_n.profilo["vp"].union(curr_n.set_attr)
 
-		#Se siamo all'altezza del nodo padre significa che non abbiamo più profili da calcolare: sistemiamo le rinomine e gli insiemi eq
-		if curr_n.id_padre == 0:
-			self.sistema_set(fix_eq=True)
+		
 
-	def sistema_set(self, fix_eq):
 
-		for id, nodo in self.lista_nodi.items():
+		#Sistemo le rinomine
+		for pseudo, real in curr_n.profilo["rn"].items():
+
 			#Sistemo le rinomine in vp, ve, ip, ie
-			for pseudo, real in nodo.profilo["rn"].items():
-				for i in {'vp', 've', 'ip', 'ie'}:
-					if pseudo in curr_n.profilo[i]:
-						self.lista_nodi[id].profilo[i] = curr_n.profilo[i].difference(pseudo).union(real)
+			for i in {'vp', 've', 'ip', 'ie'}:
+				if pseudo in curr_n.profilo[i]:
+					self.lista_nodi[id].profilo[i] = curr_n.profilo[i].difference(pseudo).union(real)
 
-				#Sistemo le rinomine in eq
-				for i in range(0, len(nodo.profilo["eq"])):
-					if pseudo in nodo.profilo["eq"][i]:
-						self.lista_nodi[id].profilo["eq"][i] = nodo.profilo["eq"][i].difference(pseudo).union(real)
+			#Sistemo le rinomine in eq
+			for i in range(0, len(curr_n.profilo["eq"])):
+				if pseudo in nodo.profilo["eq"][i]:
+					self.lista_nodi[id].profilo["eq"][i] = curr_n.profilo["eq"][i].difference(pseudo).union(real)
 
+		if first_step:
+			#Calcolo i candidati per il nodo
+			if curr_n.tipo_op != 'base':
+				#Tabella non base: calcolo candidati
+				for subj, auth in self.soggetti.items():
+					#Controllo autorizzazione per il plain text
+					aut_plain = (curr_n.profilo["vp"].union(curr_n.profilo["ip"])).issubset(auth["p"])
+				
+					#Controllo autorizzazione per il cifrato
+					aut_encr = (curr_n.profilo["ve"].union(curr_n.profilo["ie"])).issubset(auth["p"].union(auth["e"]))
+
+					aut_eq = True
+					#Controllo autorizzazione per insiemi di equivalenza
+					for subset in curr_n.profilo["eq"]:
+						aut_eq = aut_eq and (subset.issubset(auth["p"]) or subset.issubset(auth["e"]))
+
+					if aut_plain and aut_encr and aut_eq:
+						self.lista_nodi[id].candidati.add(subj)
+			else:
+				#Tabella base: cerco l'owner
+				for subj, auth in self.soggetti.items():
+					if curr_n.set_oper.issubset(auth["own"]):
+						self.lista_nodi[id].candidati.add(subj)
+			
+
+	def sistema_set(self, id, fix_eq):
 			#Sistemo gli insiemi eq (opzionale, solo a scopo visuale)
 			if fix_eq == True:
 				#Mi ottengo la lista degli attributi in eq
@@ -152,47 +306,4 @@ class query_plan(object):
 					if sel not in self.lista_nodi[id].profilo["eq"]:
 						self.lista_nodi[id].profilo["eq"].append(sel)
 
-	def calcola_candidati(self, auths):
-		for key, node in self.lista_nodi.items():
-			if node.tipo_op != 'base':
-				for subj, auth in auths.items():
-					#Controllo autorizzazione per il plain text
-					aut_plain = (node.profilo["vp"].union(node.profilo["ip"])).issubset(auth["p"])
-				
-					#Controllo autorizzazione per il cifrato
-					aut_encr = (node.profilo["ve"].union(node.profilo["ie"])).issubset(auth["p"].union(auth["e"]))
 
-					aut_eq = True
-					#Controllo autorizzazione per insiemi di equivalenza
-					for subset in node.profilo["eq"]:
-						aut_eq = aut_eq and (subset.issubset(auth["p"]) or subset.issubset(auth["e"]))
-
-					if aut_plain and aut_encr and aut_eq:
-						self.lista_nodi[key].candidati.add(subj)
-
-class nodo_plan:
-	"""Classe che rappresenta il nodo dell'albero della query"""
-	#id = identificativo del nodo, serve per identificare il padre
-	#tipo_op = operazione eseguita
-	#set_attr = attributi coinvolti dall'operazione
-	#set_oper = operandi coinvolti nell'operazione (per group by)
-	#id_padre = identificativo del nodo padre
-	#ordine = posizione del nodo (per quando ci sono più nodi su un solo livello, come nelle set operation)
-
-	def __init__(self, tipo_op, set_attributi, set_operandi, id_padre, ordine):
-		self.tipo_op = tipo_op
-		self.set_attr = set_attributi
-		self.set_oper = set_operandi
-		self.id_padre = id_padre
-		self.ordine = ordine
-		self.profilo = {}
-		self.profilo["vp"] = set()
-		self.profilo["ve"] = set()
-		self.profilo["ip"] = set()
-		self.profilo["ie"] = set()
-		self.profilo["eq"] = []
-		self.profilo["rn"] = {}
-		self.candidati = set()
-
-	def get_profilo(self):
-		return (self.profilo["vp"], self.profilo["ve"], self.profilo["ip"], self.profilo["ie"], self.profilo["eq"], self.candidati)

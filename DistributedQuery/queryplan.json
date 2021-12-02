@@ -1,0 +1,9 @@
+{
+	"1" : { "tipo_op" : "sel_val", "set_attr" : ["P"], "set_oper" : [], "set_attrplain" : ["P"], "id_padre" : 0, "ordine" : 0},
+	"2" : { "tipo_op" : "gby", "set_attr" : ["T"], "set_oper" : ["P"], "set_attrplain" : [], "id_padre" : 1, "ordine" : 0},
+	"3" : { "tipo_op" : "join", "set_attr" : ["S", "C"], "set_oper" : [], "set_attrplain" : [], "id_padre" : 2, "ordine" : 0},
+	"4" : { "tipo_op" : "sel_val", "set_attr" : ["D"], "set_oper" : [], "set_attrplain" : [], "id_padre" : 3, "ordine" : 0},
+	"5" : { "tipo_op" : "proj", "set_attr" : ["S", "D", "T"], "set_oper" : [], "set_attrplain" : [], "id_padre" : 4, "ordine" : 0},
+	"6" : { "tipo_op" : "base", "set_attr" : ["S", "B", "D", "T"], "set_oper" : ["hosp"], "set_attrplain" : [], "id_padre" : 5, "ordine" : 0},
+	"7" : { "tipo_op" : "base", "set_attr" : ["C", "P"], "set_oper" : ["ins"], "set_attrplain" : [], "id_padre" : 3, "ordine" : 1}
+}

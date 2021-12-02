@@ -21,7 +21,7 @@ class nodo_plan:
 		self.profilo["ip"] = set()
 		self.profilo["ie"] = set()
 		self.profilo["eq"] = []
-		self.profilo["rn"] = {}
+		self.profilo["rn"] = dict()
 		self.candidati = set()
 		self.assegnatario = ""
 
@@ -48,6 +48,11 @@ class query_plan(object):
 		return self.lista_nodi[id]
 
 	def set_subj(self, soggetti):
+		#Conversione delle liste in set
+		for chiave, valore in soggetti.items():
+			soggetti[chiave]["p"] = set(valore["p"])
+			soggetti[chiave]["e"] = set(valore["e"])
+			soggetti[chiave]["own"] = set(valore["own"])
 		self.soggetti = soggetti
 
 	def get_ocd(self):
@@ -86,6 +91,10 @@ class query_plan(object):
 	#I profili sono calcolati secondo una visita post-order
 	def esegui_step_rec(self, id, first_step):
 
+		#Se siamo al nodo radice e siamo al secondo step, pulisco i profili
+		if self.lista_nodi[id].id_padre == 0 and not first_step : 
+			self.pulisci_profili()
+
 		#Uso una variabile temporanea per migliorare la leggibilità
 		curr_n = self.lista_nodi[id]
 
@@ -111,14 +120,16 @@ class query_plan(object):
 
 				self.lista_nodi[id].profilo["rn"].update(self.lista_nodi[figlio].profilo["rn"])
 		
-		#Valutazione degli attributi che bisogna avere per forza decifrati per il nodo
-		attr_da_decifrare = curr_n.profilo["ve"].intersection(curr_n.set_attrplain)
-		if len(attr_da_decifrare) > 0:
-			self.lista_nodi[id].profilo["ve"] = curr_n.profilo["ve"].difference(attr_da_decifrare)
-			self.lista_nodi[id].profilo["vp"] = curr_n.profilo["vp"].union(attr_da_decifrare)
+		#Bonifica attributi rinominati per i profili
+		for pseudo, real in curr_n.profilo["rn"].items():
+			if pseudo in curr_n.set_attr:
+				self.lista_nodi[id].set_attr = curr_n.set_attr.difference(pseudo).union(real)
 
-			if not first_step:
-				self.op_cif_dec.append({ "padre" : id , "figlio" : figli[0], "tipo_op" : "D", "adc" : attr_da_decifrare, "exec" : self.lista_nodi[id].assegnatario})	
+			if pseudo in curr_n.set_oper:
+				self.lista_nodi[id].set_oper = curr_n.set_oper.difference(pseudo).union(real)
+
+			if pseudo in curr_n.set_attrplain:
+				self.lista_nodi[id].set_attrplain = curr_n.set_attrplain.difference(pseudo).union(real)
 
 		#Calcolo l'effettivo candidato che eseguirà l'operazione
 		if not first_step:
@@ -142,13 +153,13 @@ class query_plan(object):
 						break
 
 
-				self.lista_nodi[id].assegnatario = candidato #Prendo come il primo in ordine alfabetio -> L'ordine alfabetico fa la priorità
-				auth_cand = self.soggetti[candidato] #Ne prendo le autorizzazioni
+				self.lista_nodi[id].assegnatario = candidato #Prendo il soggetto con priorità massima (valore "pri" minimo)
+				auth_cand = self.soggetti[candidato] #Ne leggo le autorizzazioni
 
 				attr_da_cifrare = set()
 
 				#cifrature per sistemare le auth su attributi in chiaro
-				attr_da_cifrare.update((curr_n.profilo["vp"].union(curr_n.profilo["ip"])).difference(auth_cand["p"]))
+				attr_da_cifrare.update((curr_n.profilo["vp"]).difference(auth_cand["p"]))
 
 				#cifrature per sistemare le auth su attributi in insiemi di equivalenza
 				for subset in curr_n.profilo["eq"]:
@@ -167,7 +178,14 @@ class query_plan(object):
 					if len(adc_figlio):
 						self.op_cif_dec.append({ "padre" : id , "figlio" : figlio, "tipo_op" : "C",  "adc" : adc_figlio, "exec" : self.lista_nodi[figlio].assegnatario})
 
-		
+		#Valutazione degli attributi che bisogna avere per forza decifrati per il nodo
+		attr_da_decifrare = curr_n.profilo["ve"].intersection(curr_n.set_attrplain)
+		if len(attr_da_decifrare) > 0:
+			self.lista_nodi[id].profilo["ve"] = curr_n.profilo["ve"].difference(attr_da_decifrare)
+			self.lista_nodi[id].profilo["vp"] = curr_n.profilo["vp"].union(attr_da_decifrare)
+
+			if not first_step:
+				self.op_cif_dec.append({ "padre" : id , "figlio" : figli[0], "tipo_op" : "D", "adc" : attr_da_decifrare, "exec" : self.lista_nodi[id].assegnatario})	
 
 		#Determino il profilo del nodo corrente
 		if curr_n.tipo_op == "base":
@@ -238,9 +256,6 @@ class query_plan(object):
 		elif curr_n.tipo_op == "decr":
 			self.lista_nodi[id].profilo["ve"] = curr_n.profilo["ve"].difference(curr_n.set_attr)
 			self.lista_nodi[id].profilo["vp"] = curr_n.profilo["vp"].union(curr_n.set_attr)
-
-		
-
 
 		#Sistemo le rinomine
 		for pseudo, real in curr_n.profilo["rn"].items():

@@ -6,7 +6,11 @@ class nodo_plan:
 	#set_attr = attributi coinvolti dall'operazione
 	#set_oper = operandi coinvolti nell'operazione (per group by)
 	#id_padre = identificativo del nodo padre
+	#set_attrplain = set degli attributi che è necessario siano in chiaro per l'operazione
 	#ordine = posizione del nodo (per quando ci sono più nodi su un solo livello, come nelle set operation)
+	#profilo = profilo del nodo
+	#candidati = set dei possibili assegnatari per il nodo
+	#assegnatario = soggetto a cui è stato assegnato il nodo
 
 	def __init__(self, tipo_op, set_attributi, set_operandi, set_attrplain, id_padre, ordine):
 		self.tipo_op = tipo_op
@@ -133,7 +137,7 @@ class query_plan(object):
 
 		#Calcolo l'effettivo candidato che eseguirà l'operazione
 		if not first_step:
-			self.sistema_set(id, True)
+			self.sistema_set(id)
 			
 			if curr_n.tipo_op == 'proj' and self.lista_nodi[figli[0]].tipo_op == "base":
 				#Caso particolare di proiezione eseguita subito dopo una tabella base: eredito come candidato l'owner della tabella
@@ -167,7 +171,7 @@ class query_plan(object):
 						#Se la visibilità non è uniforme, cifro gli attributi attualmente in chiaro (e che non sono già da cifrare)
 						attr_da_cifrare.update((subset.difference(auth_cand["e"])).difference(attr_da_cifrare))
 
-				#Effettuo la cifratura vera e propria
+				#Effettuo la cifratura vera e prop\ria
 				self.lista_nodi[id].profilo["vp"] = curr_n.profilo["vp"].difference(attr_da_cifrare)
 				self.lista_nodi[id].profilo["ve"] = curr_n.profilo["ve"].union(attr_da_cifrare)
 
@@ -224,25 +228,6 @@ class query_plan(object):
 		elif curr_n.tipo_op == "rename_e":
 			self.lista_nodi[id].profilo["rn"][list(curr_n.set_oper)[0]] = list(curr_n.set_attr)[0]
 			self.lista_nodi[id].profilo["ve"] = curr_n.profilo["ve"].difference(curr_n.set_attr).union(curr_n.set_oper)
-
-		#elif self.lista_nodi[id].tipo_op == "set":
-		#    for figlio in figli:
-		#        #Calcolo i profili dei figli
-		#        esegui_step_rec(figlio)
-
-		#        #Figlio più a sinistra → lo uso per gli attributi visibili in plain e cifrati
-		#        if self.lista_nodi[figlio].ordine == 0:
-		#            self.lista_nodi[id].profilo["vp"] = self.lista_nodi[figlio].profilo["vp"]
-		#            self.lista_nodi[id].profilo["ve"] = self.lista_nodi[figlio].profilo["ve"]
-
-		#        #Ottengo gli attributi impliciti in plain e cifrati come unione diq uelli di tutti i figli
-		#        self.lista_nodi[id].profilo["ip"].union(self.lista_nodi[figlio].profilo["ip"])
-		#        self.lista_nodi[id].profilo["ie"].union(self.lista_nodi[figlio].profilo["ie"])
-
-		#        #Le relazioni di equivalenza sono ottenute come unione tra gli insiemi delle tabelle, e tutto l'arrcocchio degli attributi visibili
-		#        self.lista_nodi[id].profilo["eq"].append(self.lista_nodi[figlio].profilo["eq"])
-
-		#        #Determino tutte gli insiemi di attributi delle varie relazioni in modo posizione (primo di R1 con primo di R2 e primo di R3...)
 		
 		elif curr_n.tipo_op == "udf":
 			self.lista_nodi[id].profilo["vp"] = curr_n.profilo["vp"].difference((curr_n.set_attr.difference(curr_n.set_oper)))
@@ -256,19 +241,6 @@ class query_plan(object):
 		elif curr_n.tipo_op == "decr":
 			self.lista_nodi[id].profilo["ve"] = curr_n.profilo["ve"].difference(curr_n.set_attr)
 			self.lista_nodi[id].profilo["vp"] = curr_n.profilo["vp"].union(curr_n.set_attr)
-
-		#Sistemo le rinomine
-		for pseudo, real in curr_n.profilo["rn"].items():
-
-			#Sistemo le rinomine in vp, ve, ip, ie
-			for i in {'vp', 've', 'ip', 'ie'}:
-				if pseudo in curr_n.profilo[i]:
-					self.lista_nodi[id].profilo[i] = curr_n.profilo[i].difference(pseudo).union(real)
-
-			#Sistemo le rinomine in eq
-			for i in range(0, len(curr_n.profilo["eq"])):
-				if pseudo in nodo.profilo["eq"][i]:
-					self.lista_nodi[id].profilo["eq"][i] = curr_n.profilo["eq"][i].difference(pseudo).union(real)
 
 		if first_step:
 			#Calcolo i candidati per il nodo
@@ -295,30 +267,28 @@ class query_plan(object):
 						self.lista_nodi[id].candidati.add(subj)
 			
 
-	def sistema_set(self, id, fix_eq):
-			#Sistemo gli insiemi eq (opzionale, solo a scopo visuale)
-			if fix_eq == True:
-				#Mi ottengo la lista degli attributi in eq
-				set_attr = set()
-				for elem in self.lista_nodi[id].profilo["eq"]:
-					set_attr.update(elem)
+	def sistema_set(self, id):
+		#Mi ottengo la lista degli attributi in eq
+		set_attr = set()
+		for elem in self.lista_nodi[id].profilo["eq"]:
+			set_attr.update(elem)
 
-				#Creo un dizionario dove per ogni attributo in eq viene specificato il set collassato di appartenenza
-				newEq = {}
-				oldEq = {'dummy'}
+		#Creo un dizionario dove per ogni attributo in eq viene specificato il set collassato di appartenenza
+		newEq = {}
+		oldEq = {'dummy'}
 
-				while oldEq != newEq:
-					oldEq = newEq.copy()
-					for attr in set_attr:
-						newEq[attr] = set()
-						for subset in self.lista_nodi[id].profilo["eq"]:
-							if attr in subset:
-								newEq[attr].update(subset)
+		while oldEq != newEq:
+			oldEq = newEq.copy()
+			for attr in set_attr:
+				newEq[attr] = set()
+				for subset in self.lista_nodi[id].profilo["eq"]:
+					if attr in subset:
+						newEq[attr].update(subset)
 
-				#Terminato il form che crea il dizionario ho un dizionario dove per ogni attributo in eq ho il relativo set collassato: creo una lista ignorando i doppioni
-				self.lista_nodi[id].profilo["eq"] = []
-				for key, sel in newEq.items():
-					if sel not in self.lista_nodi[id].profilo["eq"]:
-						self.lista_nodi[id].profilo["eq"].append(sel)
+		#Terminato il form che crea il dizionario ho un dizionario dove per ogni attributo in eq ho il relativo set collassato: creo una lista ignorando i doppioni
+		self.lista_nodi[id].profilo["eq"] = []
+		for key, sel in newEq.items():
+			if sel not in self.lista_nodi[id].profilo["eq"]:
+				self.lista_nodi[id].profilo["eq"].append(sel)
 
 

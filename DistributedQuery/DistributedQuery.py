@@ -9,7 +9,7 @@ subj_json = open('soggetti.json')
 subj_dict = json.load(subj_json)
 qp_dict = json.load(qp_json)
 
-qp = queryplan.query_plan()
+qp = queryplan.query_plan() 
 
 for chiave, valore in qp_dict.items():
     qp.add_nodo(int(chiave), valore["tipo_op"], set(valore["set_attr"]), set(valore["set_oper"]), set(valore["set_attrplain"]), valore["id_padre"], valore["ordine"])

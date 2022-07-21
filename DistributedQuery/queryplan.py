@@ -133,7 +133,7 @@ class query_plan(object):
 				self.lista_nodi[id].set_oper = curr_n.set_oper.difference(pseudo).union(real)
 
 			if pseudo in curr_n.set_attrplain:
-				self.lista_nodi[id].set_attrplain = curr_n.set_attrplain.difference(pseudo).union(real)
+				self.lista_nodi[id].set_attrplain = curr_n.set_attrplain.difference(pseudo).union(real) 
 
 		#Calcolo l'effettivo candidato che eseguirà l'operazione
 		if not first_step:

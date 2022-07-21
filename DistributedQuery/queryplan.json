@@ -5,5 +5,5 @@
 	"4" : { "tipo_op" : "sel_val", "set_attr" : ["D"], "set_oper" : [], "set_attrplain" : [], "id_padre" : 3, "ordine" : 0},
 	"5" : { "tipo_op" : "proj", "set_attr" : ["S", "D", "T"], "set_oper" : [], "set_attrplain" : [], "id_padre" : 4, "ordine" : 0},
 	"6" : { "tipo_op" : "base", "set_attr" : ["S", "B", "D", "T"], "set_oper" : ["hosp"], "set_attrplain" : [], "id_padre" : 5, "ordine" : 0},
-	"7" : { "tipo_op" : "base", "set_attr" : ["C", "P"], "set_oper" : ["ins"], "set_attrplain" : [], "id_padre" : 3, "ordine" : 1}
+	"7" : { "tipo_op" : "base", "set_attr" : ["C", "P"], "set_oper" : ["ins"], "set_attrplain" : [], "id_padre" : 3, "ordine" : 1} 
 }

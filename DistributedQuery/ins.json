@@ -1,0 +1,16 @@
+{
+	"name" : "ins",
+	"owner" : "I",
+	"attributes" : ["C", "P"],
+	"permissions" : {
+		"C" : {
+			"plain" : ["H", "U", "Z"],
+			"encr" : ["X", "Y"]
+		},
+		
+		"P" : {
+			"plain" : ["U", "Y"],
+			"encr" : ["H", "X", "Z", "a"]
+		}
+	}
+}

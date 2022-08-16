@@ -23,8 +23,11 @@
   <ItemGroup>
     <Compile Include="DistributedQuery.py" />
     <Compile Include="queryplan.py" />
+    <Compile Include="utils.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="hosp.json" />
+    <Content Include="ins.json" />
     <Content Include="queryplan.json" />
     <Content Include="soggetti.json" />
   </ItemGroup>

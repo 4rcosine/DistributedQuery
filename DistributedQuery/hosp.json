@@ -1,0 +1,26 @@
+{
+	"name" : "hosp",
+	"owner" : "H",
+	"attributes" : ["S", "B", "D", "T"],
+	"permissions" : {
+		"S" : {
+			"plain" : ["U", "Z"],
+			"encr" : ["I", "X", "Y"]
+		},
+		
+		"B" : {
+			"plain" : ["I", "Y"],
+			"encr" : []
+		},
+		
+		"D" : {
+			"plain" : ["U", "X", "Y", "a"],
+			"encr" : ["I", "Z"]
+		},
+		
+		"T" : {
+			"plain" : ["U", "X", "Y", "Z", "a"],
+			"encr" : ["I"]
+		}
+	}
+}

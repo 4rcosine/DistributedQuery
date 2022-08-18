@@ -1,0 +1,53 @@
+{
+	"name" : "ins",
+	"owner" : "I",
+	"attributes" : ["C", "P"],
+	"permissions" : {
+		"C" : {
+			"plain" : ["H", "U", "Z"],
+			"encr" : ["X", "Y"]
+		},
+		
+		"P" : {
+			"plain" : ["U", "Y"],
+			"encr" : ["H", "X", "Z", "a"]
+		}
+	}
+	
+	"permissions" : {
+		"H" : {
+			"plain" : [],
+			"encr" : []
+		},
+		
+		"I" : {
+			"plain" : [],
+			"encr" : []
+		},
+		
+		"U" : {
+			"plain" : [],
+			"encr" : []
+		},
+		
+		"X" : {
+			"plain" : [],
+			"encr" : []
+		},
+		
+		"Y" : {
+			"plain" : [],
+			"encr" : []
+		},
+		
+		"Z" : {
+			"plain" : [],
+			"encr" : []
+		},
+		
+		"any" : {
+			"plain" : [],
+			"encr" : []
+		}
+	}
+}

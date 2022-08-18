@@ -30,7 +30,7 @@ class nodo_plan:
 		self.assegnatario = ""
 
 	def get_profilo(self):
-		return (self.profilo["vp"], self.profilo["ve"], self.profilo["ip"], self.profilo["ie"], self.profilo["eq"], self.candidati, self.assegnatario)
+		return (self.profilo["vp"], self.profilo["ve"], self.profilo["ip"], self.profilo["ie"], self.profilo["eq"], self.candidati, self.assegnatario, self.tipo_op, self.set_attr, self.set_oper)
 
 
 class query_plan(object):

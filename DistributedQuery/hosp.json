@@ -3,24 +3,39 @@
 	"owner" : "H",
 	"attributes" : ["S", "B", "D", "T"],
 	"permissions" : {
-		"S" : {
-			"plain" : ["U", "Z"],
-			"encr" : ["I", "X", "Y"]
-		},
-		
-		"B" : {
-			"plain" : ["I", "Y"],
+		"H" : {
+			"plain" : ["S", "B", "D", "T"],
 			"encr" : []
 		},
 		
-		"D" : {
-			"plain" : ["U", "X", "Y", "a"],
-			"encr" : ["I", "Z"]
+		"I" : {
+			"plain" : ["B"],
+			"encr" : ["S", "D", "T"]
 		},
 		
-		"T" : {
-			"plain" : ["U", "X", "Y", "Z", "a"],
-			"encr" : ["I"]
+		"U" : {
+			"plain" : ["S", "D", "T"],
+			"encr" : []
+		},
+		
+		"X" : {
+			"plain" : ["D", "T"],
+			"encr" : ["S"]
+		},
+		
+		"Y" : {
+			"plain" : ["B", "D", "T"],
+			"encr" : ["S"]
+		},
+		
+		"Z" : {
+			"plain" : ["S", "T"],
+			"encr" : ["D"]
+		},
+		
+		"a" : {
+			"plain" : ["D", "T"],
+			"encr" : []
 		}
 	}
 }

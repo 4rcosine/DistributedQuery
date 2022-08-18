@@ -3,14 +3,39 @@
 	"owner" : "I",
 	"attributes" : ["C", "P"],
 	"permissions" : {
-		"C" : {
-			"plain" : ["H", "U", "Z"],
-			"encr" : ["X", "Y"]
+		"H" : {
+			"plain" : ["C"],
+			"encr" : ["P"]
 		},
 		
-		"P" : {
-			"plain" : ["U", "Y"],
-			"encr" : ["H", "X", "Z", "a"]
+		"I" : {
+			"plain" : ["C", "P"],
+			"encr" : []
+		},
+		
+		"U" : {
+			"plain" : ["C", "P"],
+			"encr" : []
+		},
+		
+		"X" : {
+			"plain" : [],
+			"encr" : ["C", "P"]
+		},
+		
+		"Y" : {
+			"plain" : ["P"],
+			"encr" : ["C"]
+		},
+		
+		"Z" : {
+			"plain" : ["C"],
+			"encr" : ["P"]
+		},
+		
+		"a" : {
+			"plain" : [],
+			"encr" : ["P"]
 		}
 	}
 }

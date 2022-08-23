@@ -78,12 +78,12 @@ for i in range(1, 8):
 	
 	#Parti di output generate in base al tipo di operazione
 	if operazione == "gby":
-		print("-> Operation: " + dett_op + " on attribute(s) " + str(operandi).replace("'", "") + ", grouping", end='')
+		print("-> Operation: " + dett_op + " on " + str(operandi).replace("'", "") + ", grouping", end='')
 	else:
 		print("-> Operation: " + utils.ope_name[operazione], end='')
 
 	if operazione != "base":
-		print(" on attribute(s) " + str(attributi).replace("'", ""), end='')
+		print(" on " + str(attributi).replace("'", ""), end='')
 
 	else:
 		print(" " + names_set[list(operandi)[0]], end='')
@@ -94,10 +94,10 @@ for i in range(1, 8):
 	#Parti di output generate in base all'eventuale cifratura
 	for ocd in lista_ocd:
 		if i == ocd["figlio"] and ocd["tipo_op"] == "C":
-			print("-> Encryption of attribute(s) " + str(ocd["adc"]).replace("'", ""))
+			print("-> Encryption of " + str(ocd["adc"]).replace("'", ""))
 
 		if i == ocd["padre"] and ocd["tipo_op"] == "D":
-			print("-> Decryption of attribute(s) " + str(ocd["adc"]).replace("'", ""))
+			print("-> Decryption of " + str(ocd["adc"]).replace("'", ""))
 
 	print("\n\tvp: " + str(list(vp)).replace("'", "") + "\n\tve: " + str(list(ve)).replace("'", "") + "\n\tip: " + str(list(ip)).replace("'", "") + "\n\tie: " + str(list(ie)).replace("'", "") + "\n\teq: " + str(list(eq)).replace("'", ""))
 
@@ -107,11 +107,11 @@ for i in range(1, 8):
 
 #print("=== ENCRYPTION OPERATIONS ===")
 #for ocd in lista_ocd: 
-#	print("\n-> " + ("Encryption of " if ocd["tipo_op"] == "C" else "Decryption ") + "attributes " + str(ocd["adc"]).replace("'", "") + " between nodes " + str(ocd["figlio"]).replace("'", "") + " and " + str(ocd["padre"]).replace("'", "") + " by subject " + ocd["exec"])
+#	print("\n-> " + ("Encryption of " if ocd["tipo_op"] == "C" else "Decryption ") + "" + str(ocd["adc"]).replace("'", "") + " between nodes " + str(ocd["figlio"]).replace("'", "") + " and " + str(ocd["padre"]).replace("'", "") + " by subject " + ocd["exec"])
 
 
 print("\r\n=== KEY ENCRYPTION SETS ===")
 for asc in lista_asc:
-	print(" • " + str(asc["kes"]).replace("'", "") + " - Key to be given to subject(s) " + str(asc["sogg"]).replace("'", ""))
+	print(" • " + str(asc["kes"]).replace("'", "") + " - Key to be given to " + str(asc["sogg"]).replace("'", ""))
 
 print("\nEnd of computation\n\n")

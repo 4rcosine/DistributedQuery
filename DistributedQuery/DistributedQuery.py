@@ -17,12 +17,12 @@ print("The following configurations are available: ")
 configs = json.load(conf_json)
 k = 1
 for confs in configs:
-	print("\n\t" + str(k) + ") " + confs["conf_name"])
+	print("\n\t" + str(k) + ") " + confs["conf_name"], end='')
 	k += 1
 
 scelta = 0
 while not (int(scelta) >= 1 and int(scelta) < k ):
-	scelta = utils.parseUint(input("\nPlease choose one configuration (type a number from 1 to " + str(k-1) + "): "))
+	scelta = utils.parseUint(input("\n\nPlease choose one configuration (type a number from 1 to " + str(k-1) + "): "))
 
 	if not (int(scelta) >= 1 and int(scelta) < k ):
 		print("Invalid option.")

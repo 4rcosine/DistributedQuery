@@ -1,7 +1,4 @@
 {
-	"name" : "ins",
-	"owner" : "I",
-	"attributes" : ["C", "P"],
 	"permissions" : {
 		"H" : {
 			"plain" : ["C"],

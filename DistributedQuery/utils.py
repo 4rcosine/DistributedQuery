@@ -64,3 +64,10 @@ def build_initial_json(lista_tab_json):
 def give_priority(subj_json, priority_map):
 	for subj in priority_map:
 		subj_json[subj]["pri"] = priority_map[subj]
+
+
+def parseUint(str):
+	try:
+		return int(str)
+	except:
+		return -1

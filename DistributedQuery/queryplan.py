@@ -12,8 +12,9 @@ class nodo_plan:
 	#candidati = set dei possibili assegnatari per il nodo
 	#assegnatario = soggetto a cui è stato assegnato il nodo
 
-	def __init__(self, tipo_op, set_attributi, set_operandi, set_attrplain, id_padre, ordine):
+	def __init__(self, tipo_op, dett_op, set_attributi, set_operandi, set_attrplain, id_padre, ordine):
 		self.tipo_op = tipo_op
+		self.dett_op = dett_op
 		self.set_attr = set_attributi
 		self.set_oper = set_operandi
 		self.id_padre = id_padre
@@ -30,7 +31,7 @@ class nodo_plan:
 		self.assegnatario = ""
 
 	def get_profilo(self):
-		return (self.profilo["vp"], self.profilo["ve"], self.profilo["ip"], self.profilo["ie"], self.profilo["eq"], self.candidati, self.assegnatario, self.tipo_op, self.set_attr, self.set_oper)
+		return (self.profilo["vp"], self.profilo["ve"], self.profilo["ip"], self.profilo["ie"], self.profilo["eq"], self.candidati, self.assegnatario, self.tipo_op, self.set_attr, self.set_oper, self.dett_op)
 
 
 class query_plan(object):
@@ -44,8 +45,8 @@ class query_plan(object):
 	def add_nodo(self, id, nodo):
 		self.lista_nodi[id] = nodo
 
-	def add_nodo(self, id, tipo_op, set_attributi, set_operandi, set_attrplain, id_padre, ordine):
-		nodo = nodo_plan(tipo_op=tipo_op, set_attributi=set_attributi, set_operandi=set_operandi, set_attrplain=set_attrplain, id_padre=id_padre, ordine=ordine)
+	def add_nodo(self, id, tipo_op, dett_op, set_attributi, set_operandi, set_attrplain, id_padre, ordine):
+		nodo = nodo_plan(tipo_op=tipo_op, dett_op=dett_op, set_attributi=set_attributi, set_operandi=set_operandi, set_attrplain=set_attrplain, id_padre=id_padre, ordine=ordine)
 		self.lista_nodi[id] = nodo
 
 	def get_nodo(self, id):
@@ -78,6 +79,8 @@ class query_plan(object):
 		ins_eq = self.lista_nodi[1].profilo["eq"]
 		
 		lista_set_adc = list()
+		set_attr_singoli = set()
+
 		#Calcolo l'insieme degli attributi che da qualche parte deve essere cifrata
 		set_adc = set()
 		for ocd in self.op_cif_dec:
@@ -88,7 +91,35 @@ class query_plan(object):
 			if subset.issubset(set_adc):
 				lista_set_adc.append(subset)
 
-		return lista_set_adc
+		#Aggiungo gli attributi da cifrare singolarmente
+		for ocd in self.op_cif_dec:
+			if ocd["tipo_op"] == "C":
+				#Per ogni singolo attributo da cifrare controllo se esso fa parte di un set di equivalenza, se no lo aggiungo come set singleton
+				for adc in list(ocd["adc"]):
+					found = False
+					for subset in lista_set_adc:
+						if adc in subset:
+							found = True
+
+					if not found:
+						lista_set_adc.append(set(adc))
+		
+		#Determino i possessori delle chiavi
+		res = list()
+		for kes in lista_set_adc:
+			tmp = dict()
+			tmp["kes"] = kes
+			tmp["sogg"] = set()
+
+			#Ciclo sui singoli attributi da cifrare, e ricerco nelle operazioni di cifratura gli id dei nodi dai quali reperirò i candidati a cui vanno assegnate le chiavi
+			for adc in list(kes):
+				for ocd in self.op_cif_dec:
+					if adc in ocd["adc"] and ocd["tipo_op"] == "C":
+						tmp["sogg"].update(ocd["exec"])
+
+			res.append(tmp)
+
+		return res
 
 
 
@@ -171,7 +202,7 @@ class query_plan(object):
 						#Se la visibilità non è uniforme, cifro gli attributi attualmente in chiaro (e che non sono già da cifrare)
 						attr_da_cifrare.update((subset.difference(auth_cand["e"])).difference(attr_da_cifrare))
 
-				#Effettuo la cifratura vera e prop\ria
+				#Effettuo la cifratura vera e propria
 				self.lista_nodi[id].profilo["vp"] = curr_n.profilo["vp"].difference(attr_da_cifrare)
 				self.lista_nodi[id].profilo["ve"] = curr_n.profilo["ve"].union(attr_da_cifrare)
 
@@ -181,6 +212,10 @@ class query_plan(object):
 					adc_figlio = self.lista_nodi[figlio].profilo["vp"].intersection(attr_da_cifrare)
 					if len(adc_figlio):
 						self.op_cif_dec.append({ "padre" : id , "figlio" : figlio, "tipo_op" : "C",  "adc" : adc_figlio, "exec" : self.lista_nodi[figlio].assegnatario})
+						#Aggiorno i profili per il nodo figlio (è lui che effettua la cifratura)
+						self.lista_nodi[figlio].profilo["vp"] = self.lista_nodi[figlio].profilo["vp"].difference(adc_figlio)
+						self.lista_nodi[figlio].profilo["ve"] = self.lista_nodi[figlio].profilo["ve"].union(adc_figlio)
+
 
 		#Valutazione degli attributi che bisogna avere per forza decifrati per il nodo
 		attr_da_decifrare = curr_n.profilo["ve"].intersection(curr_n.set_attrplain)

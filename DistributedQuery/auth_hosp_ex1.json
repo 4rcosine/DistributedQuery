@@ -1,7 +1,4 @@
 {
-	"name" : "hosp",
-	"owner" : "H",
-	"attributes" : ["S", "B", "D", "T"],
 	"permissions" : {
 		"H" : {
 			"plain" : ["S", "B", "D", "T"],

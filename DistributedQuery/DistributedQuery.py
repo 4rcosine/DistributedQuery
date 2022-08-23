@@ -94,10 +94,10 @@ for i in range(1, 8):
 	#Parti di output generate in base all'eventuale cifratura
 	for ocd in lista_ocd:
 		if i == ocd["figlio"] and ocd["tipo_op"] == "C":
-			print("-> Encryption of attribute(s) " + str(ocd["adc"]).replace("'", "") + " by subject " + ocd["exec"])
+			print("-> Encryption of attribute(s) " + str(ocd["adc"]).replace("'", ""))
 
 		if i == ocd["padre"] and ocd["tipo_op"] == "D":
-			print("-> Decryption of attribute(s) " + str(ocd["adc"]).replace("'", "") + " by subject " + ocd["exec"])
+			print("-> Decryption of attribute(s) " + str(ocd["adc"]).replace("'", ""))
 
 	print("\n\tvp: " + str(list(vp)).replace("'", "") + "\n\tve: " + str(list(ve)).replace("'", "") + "\n\tip: " + str(list(ip)).replace("'", "") + "\n\tie: " + str(list(ie)).replace("'", "") + "\n\teq: " + str(list(eq)).replace("'", ""))
 

@@ -114,7 +114,7 @@ class query_plan(object):
 			#Ciclo sui singoli attributi da cifrare, e ricerco nelle operazioni di cifratura gli id dei nodi dai quali reperirò i candidati a cui vanno assegnate le chiavi
 			for adc in list(kes):
 				for ocd in self.op_cif_dec:
-					if adc in ocd["adc"] and ocd["tipo_op"] == "C":
+					if adc in ocd["adc"]:
 						tmp["sogg"].update(ocd["exec"])
 
 			res.append(tmp)

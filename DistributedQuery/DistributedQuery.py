@@ -70,7 +70,7 @@ print("\n============================\n\tOUTPUT\n============================\n\
 lista_ocd = qp.get_ocd()
 lista_asc = qp.get_asc()
 
-for i in range(1, 8):
+for i in range(1, qp.get_num_nodi()+1):
 	nodo = qp.get_nodo(i)
 	vp, ve, ip, ie, eq, cand, assegn, operazione, attributi, operandi, dett_op = nodo.get_profilo()
 	print("Node: " + str(i))
@@ -89,7 +89,10 @@ for i in range(1, 8):
 		print(" " + names_set[list(operandi)[0]], end='')
 	
 	print("")
-	print("-> Candidates: " + str(cand).replace("'", ""))
+
+	if operazione != "base" and not qp.is_proj_after_base(i):
+		print("-> Candidates: " + str(cand).replace("'", ""))
+
 	print("-> Assignee: " + assegn)
 	#Parti di output generate in base all'eventuale cifratura
 	for ocd in lista_ocd:

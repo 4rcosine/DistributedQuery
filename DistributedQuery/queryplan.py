@@ -52,6 +52,9 @@ class query_plan(object):
 	def get_nodo(self, id):
 		return self.lista_nodi[id]
 
+	def get_num_nodi(self):
+		return len(self.lista_nodi)
+
 	def set_subj(self, soggetti):
 		#Conversione delle liste in set
 		for chiave, valore in soggetti.items():
@@ -115,7 +118,7 @@ class query_plan(object):
 			for adc in list(kes):
 				for ocd in self.op_cif_dec:
 					if adc in ocd["adc"]:
-						tmp["sogg"].update(ocd["exec"])
+						tmp["sogg"].add(ocd["exec"])
 
 			res.append(tmp)
 
@@ -326,4 +329,13 @@ class query_plan(object):
 			if sel not in self.lista_nodi[id].profilo["eq"]:
 				self.lista_nodi[id].profilo["eq"].append(sel)
 
+	def is_proj_after_base(self, id_nodo):
+		#Determino i figli del nodo corrente
+		figli = []
+		
+		for indice, nodo_tmp in self.lista_nodi.items():
+			if nodo_tmp.id_padre == id_nodo:
+				figli.append(indice)
+
+		return self.lista_nodi[id_nodo].tipo_op == 'proj' and self.lista_nodi[figli[0]].tipo_op == "base"
 
